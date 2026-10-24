@@ -395,7 +395,7 @@ bool Json::save_json(const char *path)const noexcept{
 			fprintf(fp, "%lld", node.as_int64());
 			break;
 		case Node::Type::Float64:
-			fprintf(fp, "%.16f", node.as_float64());
+			fprintf(fp, "%.17g", node.as_float64());
 			break;
 		case Node::Type::String:
 			write_string(node.as_string());
