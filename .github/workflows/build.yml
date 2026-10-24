@@ -1,0 +1,58 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: false
+          install: mingw-w64-x86_64-gcc
+
+      - name: Build
+        shell: msys2 {0}
+        run: |
+          g++ -O2 -static -Isrc -I. -include mingw_compat.h -o UgcFileConverter.exe src/*.cpp
+
+      - name: Round-trip smoke test
+        shell: msys2 {0}
+        run: |
+          mkdir -p /tmp/smoke
+          cp UgcFileConverter.exe /tmp/smoke/
+          cp test/fixtures/minimal.gil /tmp/smoke/
+          cd /tmp/smoke
+          ./UgcFileConverter.exe -d -o out.json minimal.gil
+          ./UgcFileConverter.exe -e -o out.gil out.json
+          cmp minimal.gil out.gil
+          echo "round-trip OK"
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item UgcFileConverter.exe dist/
+          Copy-Item dtype dist -Recurse
+          Compress-Archive -Path dist/* -DestinationPath UgcFileConverter-win64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: UgcFileConverter-win64
+          path: UgcFileConverter-win64.zip
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: UgcFileConverter-win64.zip
