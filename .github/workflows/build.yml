@@ -24,7 +24,7 @@ jobs:
       - name: Build
         shell: msys2 {0}
         run: |
-          g++ -O2 -static -Isrc -I. -include "$PWD/mingw_compat.h" -o UgcFileConverter.exe src/*.cpp
+          g++ -O2 -static -Isrc -I. -include mingw_compat.h -o UgcFileConverter.exe src/*.cpp
 
       - name: Round-trip smoke test
         shell: msys2 {0}
